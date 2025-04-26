@@ -6,6 +6,8 @@ ChessLM is a Transformer-based model designed to learn rich, contextual vector r
 
 The core of the model is a Transformer encoder that processes the 8x8 board, considering piece types, locations (via positional embeddings), and whose turn it is (via a turn embedding). It outputs a 256-dimensional embedding vector for a given position (represented by a FEN string).
 
+More details can be found in the technical writeup https://bluehood.github.io/research/benh_Beyond_Evaluation__Learning_Contextual_Chess_Position_Representations_2025.pdf.
+
 ## Model Architecture and Training
 
 The model adopts an encoder Transformer architecture with 6 layers each with 8 heads. The model has approximately 4.5 million total parameters, all of which are trainable.
@@ -17,11 +19,13 @@ To encourage the model to learn comprehensive representations of chess positions
 
 Training utilised datasets derived from the Lichess database and the CCRL database, pre-processed for these self-supervised tasks.
 
+You can download the model from Huggingface at https://huggingface.co/odestorm1/chesslm. 
+
 ## Code Structure
 
 *   **`train/`**: Contains the code for training the `ChessVisionTransformer` model (`train/train.py`) on the MPP and Moves Difference tasks. This includes the model definition, dataset classes, and the training loop.
 *   **`examples/`**: Provides scripts demonstrating how to load the pre-trained encoder and generate embeddings for chess positions (FEN strings).
-*   **`puzzles/`**: Includes a Flask application (`puzzles/app.py`) that uses the generated embeddings to find chess puzzles strategically or thematically similar to a given input puzzle. This uses a precompiled dataset from huggingface (odestorm1/chesslm_puzzles) although you can create you own using the `generate_puzzle_embeddings.py` script.
+*   **`puzzles/`**: Includes a Flask application (`puzzles/app.py`) that uses the generated embeddings to find chess puzzles strategically or thematically similar to a given input puzzle. This uses a precompiled dataset of chess puzzles and their embeddings from Huggingface (odestorm1/chesslm_puzzles) although you can create you own using the `generate_puzzle_embeddings.py` script.
 *   **`data/`**: Intended location for storing raw and processed datasets (e.g., `mpp_dataset.pkl`, `moves_dataset.pkl`). You can process your own datasets from these datasets using `preprocessing.py`.
 
 ## Intended Uses & Limitations
