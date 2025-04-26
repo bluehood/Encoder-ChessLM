@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Puzzle Finder</title>
+    <!-- Chess.js and Chessboard.js libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --dark-bg: #1e1e1e;
+            --darker-bg: #121212;
+            --dark-accent: #333333;
+            --text-color: #e0e0e0;
+            --highlight-color: #2196F3;
+            --success-color: #43a047;
+            --error-color: #e53935;
+            --card-bg: #252525;
+            --border-color: #444444;
+        }
+        
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        h1, h2, h3 {
+            color: var(--text-color);
+            margin-top: 0;
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        
+        h3 {
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        
+        .app-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+        }
+        
+        /* Sidebar - Allow scrolling if needed */
+        .sidebar {
+            width: 33%;
+            min-width: 300px;
+            background-color: var(--darker-bg);
+            padding: 8px;
+            box-sizing: border-box;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        
+        /* Main content - Allow scrolling if needed */
+        .main-content {
+            width: 67%;
+            padding: 8px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        
+        .input-section, .puzzle-section, .card {
+            background-color: var(--card-bg);
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            margin-bottom: 8px;
+        }
+        
+        /* Puzzle section should fill available height but not overflow */
+        .puzzle-section {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Create a responsive, square container for the chess board */
+        .chess-board-wrapper {
+            width: 100%;
+            max-width: 600px; /* Maximum size of the board */
+            margin: 0 auto 8px auto;
+        }
+        
+        /* Make the board container maintain a square aspect ratio */
+        .chess-board-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%; /* Creates a 1:1 aspect ratio (square) */
+            overflow: hidden;
+        }
+        
+        /* Absolute positioning for the actual board div */
+        #puzzleBoard {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Editor board container - also make it responsive */
+        .editor-board-container {
+            width: 100%;
+            position: relative;
+            margin-bottom: 8px;
+        }
+        
+        /* Make the editor also maintain a square ratio */
+        .editor-board-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%; /* Creates a 1:1 aspect ratio (square) */
+            overflow: hidden;
+        }
+        
+        /* Position the editor board absolutely within its container */
+        #boardEditor {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .input-group {
+            margin-bottom: 6px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 2px;
+            font-weight: bold;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 4px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: monospace;
+            background-color: var(--dark-accent);
+            color: var(--text-color);
+            box-sizing: border-box;
+        }
+        
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 6px;
+        }
+        
+        button {
+            background-color: var(--highlight-color);
+            color: white;
+            border: none;
+            padding: 4px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            flex-grow: 1;
+            font-size: 0.85rem;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .hint-btn {
+            background-color: var(--dark-accent);
+            margin-top: 8px;
+            margin-bottom: 6px;
+        }
+        
+        .hint-btn:hover {
+            background-color: #444444;
+        }
+        
+        .info-panel {
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+        
+        .info-item {
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: var(--highlight-color);
+        }
+        
+        #moveResult {
+            margin-top: 8px;
+            font-weight: bold;
+            padding: 4px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .correct {
+            background-color: rgba(67, 160, 71, 0.2);
+            color: var(--success-color);
+        }
+        
+        .incorrect {
+            background-color: rgba(229, 57, 53, 0.2);
+            color: var(--error-color);
+        }
+        
+        #loadingIndicator {
+            text-align: center;
+            display: none;
+        }
+        
+        #inputError, #serverError {
+            color: var(--error-color);
+            margin-top: 4px;
+            margin-bottom: 4px;
+            display: none;
+            font-size: 0.85rem;
+        }
+        
+        .section-title {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+        }
+        
+        /* Custom styles for chessboard */
+        .white-1e1d7 {
+            background-color: #b58863;
+        }
+        
+        .black-3c85d {
+            background-color: #f0d9b5;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            html, body {
+                height: auto;
+                overflow: auto;
+            }
+            .app-container {
+                flex-direction: column;
+                height: auto;
+                overflow-y: visible;
+            }
+            .sidebar, .main-content {
+                width: 100%;
+                height: auto;
+                overflow-y: visible;
+            }
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .chess-board-wrapper, .editor-board-container {
+                max-width: 500px; /* Slightly smaller on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h1>Chess Puzzle Finder</h1>
+            <div class="input-section">
+                <h3 class="section-title">Position Input</h3>
+                <div class="input-group">
+                    <label for="fenInput">FEN Position:</label>
+                    <input type="text" id="fenInput" placeholder="e.g. rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1">
+                    <div id="inputError"></div>
+                </div>
+                
+                <div class="button-row">
+                    <button id="loadPositionBtn">Load Position</button>
+                    <button id="findPuzzleBtn">Find Similar Puzzle</button>
+                </div>
+                
+                <h3 class="section-title">Position Editor</h3>
+                <div class="editor-board-container">
+                    <div class="editor-board-wrapper">
+                        <div id="boardEditor"></div>
+                    </div>
+                </div>
+                
+                <div class="button-row">
+                    <button id="resetBoardBtn">Reset Board</button>
+                </div>
+                
+                <div id="serverError"></div>
+                <div id="loadingIndicator">
+                    <p>Finding similar puzzle...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main content -->
+        <div class="main-content">
+            <div class="puzzle-section" style="display: none;">
+                <h2 class="section-title">Similar Puzzle Challenge</h2>
+                <div class="chess-board-wrapper">
+                    <div class="chess-board-container">
+                        <div id="puzzleBoard"></div>
+                    </div>
+                </div>
+                <div class="info-panel">
+                    <div class="info-item">
+                        <span class="info-label">Themes:</span>
+                        <span id="puzzleThemes"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">FEN:</span>
+                        <span id="puzzleFen"></span>
+                    </div>
+                    <button id="hintBtn" class="hint-btn">Get Hint</button>
+                    <div id="moveResult"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load our custom JavaScript -->
+    <script src="/static/script.js"></script>
+</body>
+</html> 
